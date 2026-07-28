@@ -69,17 +69,42 @@ function buildConversationMessages(messages) {
 
 async function generateReply(messages, stage, contact) {
   const conversationMessages = buildConversationMessages(messages);
+  const lastUserMsg = messages.filter(m => m.direction === 'inbound').pop();
+  const currentText = lastUserMsg ? (lastUserMsg.content || '').trim() : '你好';
 
-  console.log('[AI] 送出請求，訊息數:', conversationMessages.length);
-  const response = await client.messages.create({
-    model: config.anthropic.model,
-    max_tokens: 500,
-    system: buildSystemPrompt(stage),
-    messages: conversationMessages,
-  });
+  console.log('[AI] 當前訊息:', currentText, '| 歷史訊息數:', conversationMessages.length);
+
+  let response;
+  try {
+    response = await client.messages.create({
+      model: config.anthropic.model,
+      max_tokens: 500,
+      system: buildSystemPrompt(stage),
+      messages: conversationMessages,
+    });
+  } catch (err) {
+    console.error('[AI] API 呼叫失敗:', err.message);
+    console.log('[AI] 改用單則訊息重試');
+    response = await client.messages.create({
+      model: config.anthropic.model,
+      max_tokens: 500,
+      system: buildSystemPrompt(stage),
+      messages: [{ role: 'user', content: currentText }],
+    });
+  }
 
   if (!response.content || !response.content[0] || !response.content[0].text) {
-    console.error('[AI] API 回傳異常:', JSON.stringify(response));
+    console.error('[AI] 歷史模式回傳空內容，改用單則訊息重試');
+    response = await client.messages.create({
+      model: config.anthropic.model,
+      max_tokens: 500,
+      system: buildSystemPrompt(stage),
+      messages: [{ role: 'user', content: currentText }],
+    });
+  }
+
+  if (!response.content || !response.content[0] || !response.content[0].text) {
+    console.error('[AI] 單則訊息也失敗:', JSON.stringify(response));
     throw new Error('AI 回傳空內容');
   }
 
