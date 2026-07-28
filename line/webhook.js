@@ -79,16 +79,37 @@ async function processEvent(event) {
     db.updateContactStage(contact.id, newStage);
   }
 
-  const messages = db.getMessages(contact.id);
-  const aiReply = await generateReply(messages, newStage, contact);
+  const allMessages = db.getMessages(contact.id);
+  const messages = allMessages.slice(-20);
+  console.log('[Process] 對話歷史:', allMessages.length, '則，取最近', messages.length, '則');
+
+  let aiReply;
+  try {
+    aiReply = await generateReply(messages, newStage, contact);
+    console.log('[Process] AI 回覆產生成功，長度:', aiReply.length);
+  } catch (aiErr) {
+    console.error('[Process] AI 產生回覆失敗:', aiErr.message, aiErr.stack);
+    aiReply = '收到你的訊息了 😊\n品慧老師會盡快回覆你，請稍等一下 ✨';
+  }
 
   const mode = db.getSetting('reply_mode') || 'semi-auto';
   console.log('[Process] 目前模式:', mode);
 
   if (mode === 'auto') {
     console.log('[Process] 全自動 → 直接回覆');
-    await replyMessage(replyToken, aiReply);
-    db.saveMessage(contact.id, 'outbound', 'ai', aiReply, null, null);
+    try {
+      await replyMessage(replyToken, aiReply);
+      db.saveMessage(contact.id, 'outbound', 'ai', aiReply, null, null);
+    } catch (sendErr) {
+      console.error('[Process] LINE 發送失敗:', sendErr.message);
+      try {
+        await pushMessage(userId, aiReply);
+        db.saveMessage(contact.id, 'outbound', 'ai', aiReply, null, null);
+        console.log('[Process] 改用 pushMessage 成功');
+      } catch (pushErr) {
+        console.error('[Process] pushMessage 也失敗:', pushErr.message);
+      }
+    }
   } else {
     console.log('[Process] 半自動 → 儲存草稿, inboundId:', inboundId);
     db.saveDraft(contact.id, inboundId, aiReply);
