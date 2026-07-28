@@ -60,10 +60,20 @@ ${nuanyuPrompt}
 }
 
 function buildConversationMessages(messages) {
-  return messages.map(m => ({
-    role: m.direction === 'inbound' ? 'user' : 'assistant',
-    content: m.content,
-  }));
+  const result = [];
+  for (const m of messages) {
+    const role = m.direction === 'inbound' ? 'user' : 'assistant';
+    const last = result[result.length - 1];
+    if (last && last.role === role) {
+      last.content += '\n' + m.content;
+    } else {
+      result.push({ role, content: m.content });
+    }
+  }
+  if (result.length > 0 && result[0].role === 'assistant') {
+    result.shift();
+  }
+  return result;
 }
 
 async function generateReply(messages, stage, contact) {
