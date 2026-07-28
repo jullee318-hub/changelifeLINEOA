@@ -68,7 +68,7 @@ async function generateReply(messages, stage, contact) {
 
   const response = await client.messages.create({
     model: config.anthropic.model,
-    max_tokens: 300,
+    max_tokens: 500,
     system: buildSystemPrompt(stage),
     messages: conversationMessages,
   });
