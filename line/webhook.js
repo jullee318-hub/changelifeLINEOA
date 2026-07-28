@@ -80,7 +80,7 @@ async function processEvent(event) {
   }
 
   const allMessages = db.getMessages(contact.id);
-  const messages = allMessages.slice(-20);
+  const messages = allMessages.slice(-10);
   console.log('[Process] 對話歷史:', allMessages.length, '則，取最近', messages.length, '則');
 
   let aiReply;
