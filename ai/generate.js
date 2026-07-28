@@ -72,10 +72,8 @@ function buildConversationMessages(messages) {
   return result;
 }
 
-async function generateReply(messages, stage, contact) {
-  const conversationMessages = buildConversationMessages(messages);
-  const lastUserMsg = messages.filter(m => m.direction === 'inbound').pop();
-  const currentText = lastUserMsg ? (lastUserMsg.content || '').trim() : '你好';
+async function generateReply(messages, stage, contact, currentMessage) {
+  const currentText = (currentMessage || '你好').trim();
 
   console.log('[AI] 當前訊息:', currentText, '| 模型:', config.anthropic.model);
 

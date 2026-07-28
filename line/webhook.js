@@ -91,7 +91,7 @@ async function processEvent(event) {
 
   let aiReply;
   try {
-    aiReply = await generateReply(messages, newStage, contact);
+    aiReply = await generateReply(messages, newStage, contact, text);
     console.log('[Process] AI 回覆產生成功，長度:', aiReply.length);
   } catch (aiErr) {
     console.error('[Process] AI 產生回覆失敗:', aiErr.message, aiErr.stack);
