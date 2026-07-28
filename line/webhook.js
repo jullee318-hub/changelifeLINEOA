@@ -80,8 +80,14 @@ async function processEvent(event) {
   }
 
   const allMessages = db.getMessages(contact.id);
-  const messages = allMessages.slice(-10);
-  console.log('[Process] 對話歷史:', allMessages.length, '則，取最近', messages.length, '則');
+  const filtered = allMessages.filter(m => {
+    const c = (m.content || '').trim();
+    if (!c) return false;
+    if (c.includes('品慧老師會盡快回覆你')) return false;
+    return true;
+  });
+  const messages = filtered.slice(-6);
+  console.log('[Process] 對話歷史:', allMessages.length, '則，過濾後', filtered.length, '則，取最近', messages.length, '則');
 
   let aiReply;
   try {

@@ -8,7 +8,7 @@ module.exports = {
   },
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY,
-    model: process.env.AI_MODEL || 'claude-sonnet-4-20250514',
+    model: process.env.AI_MODEL || 'claude-haiku-4-5-20251001',
   },
   dbPath: process.env.DB_PATH || path.join(__dirname, 'data', 'database.sqlite'),
   session: {
