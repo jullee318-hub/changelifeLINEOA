@@ -85,6 +85,18 @@ function buildConversationMessages(messages) {
   return result;
 }
 
+const LITE_PROMPT = `你是品慧老師的 LINE 帳號。用溫暖、有靈性但接地氣的語氣回覆。
+規則：
+- 最多 3-6 行，emoji 1-2 個
+- 用「你」不用「您」
+- 不說「去找品慧老師」——你就是品慧老師的帳號
+- 不說「我不確定」「我怕講錯」——直接回答
+- 不說「感謝您的訊息」——不要罐頭回覆
+- 提到上過課的人用「同學」，不要用「姐妹」
+- 對方問退費：先接住她的擔心，再了解她的需求，不要閃躲
+- 對方質疑：不辯論，先肯定她認真考慮，再給具體方向
+- 問什麼答什麼，不要答非所問`;
+
 async function callClaudeAPI(systemPrompt, userText) {
   const response = await client.messages.create({
     model: config.anthropic.model,
@@ -110,16 +122,17 @@ async function generateReply(messages, stage, contact, currentMessage) {
   const systemPrompt = buildSystemPrompt(stage);
 
   console.log('[AI] 當前訊息:', currentText, '| 模型:', config.anthropic.model);
+  console.log('[AI] 系統提示詞長度:', systemPrompt.length, '字元');
 
   try {
     return await callClaudeAPI(systemPrompt, currentText);
   } catch (firstErr) {
-    console.error('[AI] 第一次呼叫失敗:', firstErr.message, '| 2秒後重試...');
+    console.error('[AI] 第一次呼叫失敗:', firstErr.message, '| 2秒後用精簡版重試...');
     await sleep(2000);
     try {
-      return await callClaudeAPI(systemPrompt, currentText);
+      return await callClaudeAPI(LITE_PROMPT, currentText);
     } catch (secondErr) {
-      console.error('[AI] 重試也失敗:', secondErr.message);
+      console.error('[AI] 精簡版也失敗:', secondErr.message);
       throw secondErr;
     }
   }
