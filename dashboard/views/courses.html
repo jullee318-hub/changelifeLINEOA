@@ -343,9 +343,10 @@ async function saveCourses() {
   try {
     const res = await fetch('/api/courses', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ courses }),
     });
+    if (res.status === 401) { window.location.href = '/dashboard/login'; return; }
     const data = await res.json();
     if (!res.ok) { msg.style.color = '#e74c3c'; msg.textContent = data.error || '儲存失敗'; return; }
     msg.style.color = '#27ae60';
