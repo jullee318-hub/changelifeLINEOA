@@ -62,16 +62,21 @@ ${nuanyuPrompt}
 function buildConversationMessages(messages) {
   const result = [];
   for (const m of messages) {
+    const content = (m.content || '').trim();
+    if (!content) continue;
     const role = m.direction === 'inbound' ? 'user' : 'assistant';
     const last = result[result.length - 1];
     if (last && last.role === role) {
-      last.content += '\n' + m.content;
+      last.content += '\n' + content;
     } else {
-      result.push({ role, content: m.content });
+      result.push({ role, content });
     }
   }
   if (result.length > 0 && result[0].role === 'assistant') {
     result.shift();
+  }
+  if (result.length === 0) {
+    result.push({ role: 'user', content: '你好' });
   }
   return result;
 }
@@ -79,12 +84,18 @@ function buildConversationMessages(messages) {
 async function generateReply(messages, stage, contact) {
   const conversationMessages = buildConversationMessages(messages);
 
+  console.log('[AI] 送出請求，訊息數:', conversationMessages.length);
   const response = await client.messages.create({
     model: config.anthropic.model,
     max_tokens: 500,
     system: buildSystemPrompt(stage),
     messages: conversationMessages,
   });
+
+  if (!response.content || !response.content[0] || !response.content[0].text) {
+    console.error('[AI] API 回傳異常:', JSON.stringify(response));
+    throw new Error('AI 回傳空內容');
+  }
 
   return response.content[0].text.trim();
 }
