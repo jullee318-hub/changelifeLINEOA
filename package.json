@@ -1,0 +1,19 @@
+{
+  "name": "line-auto-reply-yizhuanlingsheng",
+  "version": "1.0.0",
+  "description": "意轉靈升工作坊 LINE 官方帳號 AI 自動回覆系統",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
+    "@line/bot-sdk": "^11.2.0",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "sql.js": "^1.14.1"
+  }
+}

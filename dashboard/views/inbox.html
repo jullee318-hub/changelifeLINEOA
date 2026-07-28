@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1A2F3A">
+<link rel="manifest" href="/manifest.json">
+<title>收件匣 — 意轉靈升工作坊</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f5f5f5;
+  color: #333;
+}
+.topbar {
+  background: #1A2F3A;
+  color: #fff;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.topbar h1 { font-size: 18px; font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.mode-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.mode-auto { background: #27ae60; color: #fff; }
+.mode-semi { background: #D4A84B; color: #1A2F3A; }
+.topbar-link {
+  color: #ccc;
+  text-decoration: none;
+  font-size: 14px;
+}
+.topbar-link:hover { color: #fff; }
+.container { max-width: 800px; margin: 0 auto; padding: 20px; }
+.section-title {
+  font-size: 15px;
+  color: #888;
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+.conv-list { list-style: none; }
+.conv-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+  text-decoration: none;
+  color: inherit;
+}
+.conv-item:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #2E8B7A;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.conv-info { flex: 1; min-width: 0; }
+.conv-name {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stage-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+.stage-catch { background: #e0f2f1; color: #00695c; }
+.stage-warm { background: #fff3e0; color: #e65100; }
+.stage-convert { background: #e8eaf6; color: #283593; }
+.conv-preview {
+  font-size: 13px;
+  color: #888;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.conv-meta { text-align: right; flex-shrink: 0; }
+.conv-time { font-size: 12px; color: #aaa; }
+.conv-draft-badge {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #e74c3c;
+  font-weight: 600;
+}
+.empty {
+  text-align: center;
+  color: #aaa;
+  padding: 60px 20px;
+  font-size: 15px;
+}
+@media (max-width: 600px) {
+  .topbar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+  .topbar h1 { font-size: 16px; }
+  .topbar-right { gap: 10px; width: 100%; justify-content: flex-end; }
+  .topbar-link { font-size: 13px; }
+  .container { padding: 12px; }
+  .conv-item { padding: 12px 14px; gap: 10px; }
+  .avatar { width: 38px; height: 38px; font-size: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>意轉靈升工作坊</h1>
+  <div class="topbar-right">
+    <span class="mode-badge" id="modeBadge">載入中</span>
+    <a href="/dashboard/courses" class="topbar-link">課程</a>
+    <a href="/dashboard/broadcast" class="topbar-link">排程</a>
+    <a href="/dashboard/settings" class="topbar-link">設定</a>
+    <a href="#" class="topbar-link" id="logoutBtn">登出</a>
+  </div>
+</div>
+<div class="container">
+  <div id="draftSection" style="display:none; margin-bottom: 24px;">
+    <div class="section-title">待審核草稿</div>
+    <ul class="conv-list" id="draftList"></ul>
+  </div>
+  <div class="section-title">所有對話</div>
+  <ul class="conv-list" id="convList"></ul>
+  <div class="empty" id="emptyMsg" style="display:none;">目前沒有對話</div>
+</div>
+<script>
+async function load() {
+  const [convRes, draftRes, settingsRes] = await Promise.all([
+    fetch('/api/conversations'), fetch('/api/drafts'), fetch('/api/settings')
+  ]);
+  const conversations = await convRes.json();
+  const drafts = await draftRes.json();
+  const settings = await settingsRes.json();
+
+  const badge = document.getElementById('modeBadge');
+  if (settings.reply_mode === 'auto') {
+    badge.textContent = '全自動';
+    badge.className = 'mode-badge mode-auto';
+  } else {
+    badge.textContent = '半自動';
+    badge.className = 'mode-badge mode-semi';
+  }
+
+  const draftSection = document.getElementById('draftSection');
+  const draftList = document.getElementById('draftList');
+  if (drafts.length > 0) {
+    draftSection.style.display = 'block';
+    draftList.innerHTML = drafts.map(d => `
+      <a class="conv-item" href="/dashboard/conversation/${d.contact_id}">
+        <div class="avatar">${(d.display_name || '?')[0]}</div>
+        <div class="conv-info">
+          <div class="conv-name">${d.display_name || '未知用戶'}</div>
+          <div class="conv-preview">AI 草稿：${escapeHtml(d.ai_content.substring(0, 60))}</div>
+        </div>
+        <div class="conv-meta">
+          <div class="conv-time">${formatTime(d.created_at)}</div>
+          <div class="conv-draft-badge">待審核</div>
+        </div>
+      </a>
+    `).join('');
+  }
+
+  const convList = document.getElementById('convList');
+  const emptyMsg = document.getElementById('emptyMsg');
+  if (conversations.length === 0) {
+    emptyMsg.style.display = 'block';
+  } else {
+    convList.innerHTML = conversations.map(c => {
+      const stageName = { catch: '接住', warm: '養溫', convert: '轉化' }[c.stage] || c.stage;
+      const stageClass = 'stage-' + c.stage;
+      return `
+        <a class="conv-item" href="/dashboard/conversation/${c.id}">
+          <div class="avatar">${(c.display_name || '?')[0]}</div>
+          <div class="conv-info">
+            <div class="conv-name">
+              ${escapeHtml(c.display_name || '未知用戶')}
+              <span class="stage-tag ${stageClass}">${stageName}</span>
+            </div>
+            <div class="conv-preview">${c.last_direction === 'inbound' ? '' : '你：'}${escapeHtml((c.last_message || '').substring(0, 50))}</div>
+          </div>
+          <div class="conv-meta">
+            <div class="conv-time">${formatTime(c.last_message_at)}</div>
+            ${c.pending_drafts > 0 ? '<div class="conv-draft-badge">待審核</div>' : ''}
+          </div>
+        </a>
+      `;
+    }).join('');
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function formatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'Z');
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 60000) return '剛剛';
+  if (diff < 3600000) return Math.floor(diff / 60000) + ' 分鐘前';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小時前';
+  return d.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
+}
+
+document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+  e.preventDefault();
+  await fetch('/dashboard/logout', { method: 'POST' });
+  window.location.href = '/dashboard/login';
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+load();
+setInterval(load, 10000);
+</script>
+</body>
+</html>

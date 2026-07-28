@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1A2F3A">
+<link rel="manifest" href="/manifest.json">
+<title>課程管理 — 意轉靈升工作坊</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f5f5f5;
+  color: #333;
+  min-height: 100vh;
+}
+.topbar {
+  background: #1A2F3A;
+  color: #fff;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.back-btn { color: #ccc; text-decoration: none; font-size: 20px; }
+.back-btn:hover { color: #fff; }
+.topbar h1 { font-size: 18px; font-weight: 600; flex: 1; }
+.topbar-actions { display: flex; gap: 8px; }
+.container { max-width: 700px; margin: 0 auto; padding: 16px; }
+.hint {
+  background: #e8f5f2;
+  border: 1px solid #b2dfdb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #00695c;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+.course-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+.course-card.inactive { opacity: 0.5; }
+.course-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.course-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #2E8B7A;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.course-header input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+}
+.course-header input:focus { outline: none; border-color: #2E8B7A; }
+.course-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.course-toggle label { font-size: 12px; color: #888; white-space: nowrap; }
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #ccc;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.toggle-slider:before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+.toggle-switch input:checked + .toggle-slider { background: #2E8B7A; }
+.toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+.field-group {
+  margin-bottom: 10px;
+}
+.field-group label {
+  display: block;
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 4px;
+}
+.field-group input, .field-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+}
+.field-group textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+.field-group input:focus, .field-group textarea:focus {
+  outline: none;
+  border-color: #2E8B7A;
+}
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.course-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.btn-delete {
+  background: none;
+  border: 1px solid #e74c3c;
+  color: #e74c3c;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-delete:hover { background: #ffebee; }
+.add-btn {
+  width: 100%;
+  padding: 16px;
+  background: #fff;
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #888;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: all 0.2s;
+}
+.add-btn:hover { border-color: #2E8B7A; color: #2E8B7A; }
+.save-bar {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  border-top: 1px solid #eee;
+  padding: 12px 16px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  z-index: 100;
+}
+.btn-save {
+  padding: 14px 48px;
+  background: #2E8B7A;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 200px;
+}
+.btn-save:hover { background: #267A6B; }
+.btn-save:disabled { background: #ccc; cursor: not-allowed; }
+.save-msg {
+  font-size: 14px;
+  color: #27ae60;
+  text-align: center;
+  padding: 8px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 600px) {
+  .container { padding: 12px; }
+  .course-card { padding: 16px; }
+  .field-row { grid-template-columns: 1fr; }
+  .course-header { flex-wrap: wrap; }
+  .course-header input { min-width: 0; }
+  .topbar { padding: 12px 16px; }
+  .topbar h1 { font-size: 16px; }
+  .btn-save { min-width: 0; flex: 1; }
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/dashboard/inbox" class="back-btn">&larr;</a>
+  <h1>課程管理</h1>
+</div>
+<div class="container">
+  <div class="hint">
+    在這裡管理你的課程資訊。AI 回覆觀眾時，會自動讀取這裡的最新資料。<br>
+    關閉開關 = 暫停推廣該課程（AI 不會提到它）。
+  </div>
+  <div id="courseList"></div>
+  <button class="add-btn" onclick="addCourse()">+ 新增課程</button>
+</div>
+<div class="save-bar">
+  <div style="text-align:center; width:100%;">
+    <button class="btn-save" id="saveBtn" onclick="saveCourses()">儲存變更</button>
+    <div class="save-msg" id="saveMsg"></div>
+  </div>
+</div>
+<script>
+let courses = [];
+
+async function loadCourses() {
+  try {
+    const res = await fetch('/api/courses');
+    courses = await res.json();
+    renderCourses();
+  } catch (e) {
+    document.getElementById('courseList').innerHTML = '<div style="text-align:center;color:#e74c3c;padding:20px;">載入失敗</div>';
+  }
+}
+
+function renderCourses() {
+  const el = document.getElementById('courseList');
+  if (courses.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;">還沒有課程，點下方按鈕新增</div>';
+    return;
+  }
+  el.innerHTML = courses.map((c, i) => `
+    <div class="course-card ${c.active === false ? 'inactive' : ''}" data-index="${i}">
+      <div class="course-header">
+        <div class="course-num">${i + 1}</div>
+        <input type="text" value="${esc(c.name)}" placeholder="課程名稱" onchange="updateField(${i}, 'name', this.value)">
+        <div class="course-toggle">
+          <label>開課中</label>
+          <div class="toggle-switch">
+            <input type="checkbox" ${c.active !== false ? 'checked' : ''} onchange="updateField(${i}, 'active', this.checked)">
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>課程簡介（AI 會用這段介紹給觀眾）</label>
+        <textarea placeholder="簡單描述這堂課的內容和價值..." onchange="updateField(${i}, 'description', this.value)">${esc(c.description || '')}</textarea>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>費用</label>
+          <input type="text" value="${esc(c.price || '')}" placeholder="例：NT$3,980 或 洽詢" onchange="updateField(${i}, 'price', this.value)">
+        </div>
+        <div class="field-group">
+          <label>上課時間</label>
+          <input type="text" value="${esc(c.schedule || '')}" placeholder="例：8/29-30 10:00-17:00" onchange="updateField(${i}, 'schedule', this.value)">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>報名連結</label>
+          <input type="text" value="${esc(c.link || '')}" placeholder="https://..." onchange="updateField(${i}, 'link', this.value)">
+        </div>
+        <div class="field-group">
+          <label>備註（給 AI 的額外提示）</label>
+          <input type="text" value="${esc(c.note || '')}" placeholder="例：適合初學者" onchange="updateField(${i}, 'note', this.value)">
+        </div>
+      </div>
+      <div class="course-actions">
+        <button class="btn-delete" onclick="deleteCourse(${i})">刪除此課程</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateField(index, field, value) {
+  courses[index][field] = value;
+}
+
+function addCourse() {
+  courses.push({
+    name: '',
+    description: '',
+    price: '',
+    schedule: '',
+    link: '',
+    note: '',
+    active: true,
+  });
+  renderCourses();
+  const cards = document.querySelectorAll('.course-card');
+  if (cards.length > 0) cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function deleteCourse(index) {
+  const name = courses[index].name || '未命名課程';
+  if (!confirm('確定要刪除「' + name + '」嗎？')) return;
+  courses.splice(index, 1);
+  renderCourses();
+}
+
+async function saveCourses() {
+  const btn = document.getElementById('saveBtn');
+  const msg = document.getElementById('saveMsg');
+  btn.disabled = true;
+  btn.textContent = '儲存中...';
+  msg.textContent = '';
+  try {
+    const res = await fetch('/api/courses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courses }),
+    });
+    const data = await res.json();
+    if (!res.ok) { msg.style.color = '#e74c3c'; msg.textContent = data.error || '儲存失敗'; return; }
+    msg.style.color = '#27ae60';
+    msg.textContent = '已儲存！AI 會使用最新的課程資料回覆觀眾';
+    setTimeout(() => msg.textContent = '', 4000);
+  } catch (e) {
+    msg.style.color = '#e74c3c';
+    msg.textContent = '儲存失敗：' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '儲存變更';
+  }
+}
+
+function esc(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+loadCourses();
+</script>
+</body>
+</html>

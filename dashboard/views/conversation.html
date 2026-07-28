@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1A2F3A">
+<link rel="manifest" href="/manifest.json">
+<title>對話 — 意轉靈升工作坊</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f5f5f5;
+  color: #333;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  background: #1A2F3A;
+  color: #fff;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.back-btn { color: #ccc; text-decoration: none; font-size: 20px; }
+.back-btn:hover { color: #fff; }
+.topbar-info { flex: 1; }
+.topbar-name { font-size: 16px; font-weight: 600; }
+.topbar-stage { font-size: 12px; color: #D4A84B; }
+.main-area { flex: 1; display: flex; overflow: hidden; }
+.chat-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.messages { flex: 1; overflow-y: auto; padding: 20px; }
+.msg { max-width: 75%; margin-bottom: 12px; display: flex; flex-direction: column; }
+.msg-inbound { align-items: flex-start; }
+.msg-outbound { align-items: flex-end; margin-left: auto; }
+.msg-bubble { padding: 10px 16px; border-radius: 16px; font-size: 15px; line-height: 1.5; word-break: break-word; }
+.msg-inbound .msg-bubble { background: #fff; border-bottom-left-radius: 4px; }
+.msg-outbound .msg-bubble { background: #2E8B7A; color: #fff; border-bottom-right-radius: 4px; }
+.msg-meta { font-size: 11px; color: #aaa; margin-top: 4px; padding: 0 4px; }
+.msg-source { font-size: 11px; color: #D4A84B; margin-top: 2px; padding: 0 4px; }
+.draft-banner {
+  background: #fef9e7;
+  border: 1px solid #D4A84B;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 20px;
+  flex-shrink: 0;
+}
+.draft-banner h3 { font-size: 14px; color: #D4A84B; margin-bottom: 8px; }
+.draft-content {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 60px;
+  resize: vertical;
+  font-family: inherit;
+}
+.draft-actions { display: flex; gap: 8px; margin-top: 10px; }
+.draft-actions button {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.btn-approve { background: #2E8B7A; color: #fff; }
+.btn-approve:hover { background: #267A6B; }
+.btn-reject { background: #eee; color: #666; }
+.btn-reject:hover { background: #ddd; }
+.reply-bar {
+  padding: 12px 20px;
+  background: #fff;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.reply-input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 24px;
+  font-size: 15px;
+  font-family: inherit;
+}
+.reply-input:focus { outline: none; border-color: #2E8B7A; }
+.reply-send {
+  padding: 10px 24px;
+  background: #2E8B7A;
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.reply-send:hover { background: #267A6B; }
+.sidebar {
+  width: 260px;
+  background: #fff;
+  border-left: 1px solid #eee;
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.sidebar h3 { font-size: 13px; color: #888; margin-bottom: 8px; }
+.sidebar select, .sidebar textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: 16px;
+}
+.sidebar textarea { min-height: 100px; resize: vertical; }
+.sidebar .save-btn {
+  width: 100%;
+  padding: 8px;
+  background: #eee;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.sidebar .save-btn:hover { background: #ddd; }
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .msg { max-width: 85%; }
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/dashboard/inbox" class="back-btn">&larr;</a>
+  <div class="topbar-info">
+    <div class="topbar-name" id="contactName">載入中...</div>
+    <div class="topbar-stage" id="contactStage"></div>
+  </div>
+</div>
+<div class="main-area">
+  <div class="chat-area">
+    <div class="messages" id="messages"></div>
+    <div id="draftArea"></div>
+    <div class="reply-bar">
+      <input type="text" class="reply-input" id="replyInput" placeholder="輸入訊息...">
+      <button class="reply-send" id="replyBtn">送出</button>
+    </div>
+  </div>
+  <div class="sidebar">
+    <h3>對話階段</h3>
+    <select id="stageSelect">
+      <option value="catch">接住（0-2天）</option>
+      <option value="warm">養溫（3-5天）</option>
+      <option value="convert">轉化（5天+）</option>
+    </select>
+    <h3>備註</h3>
+    <textarea id="notes" placeholder="記錄這位觀眾的狀況..."></textarea>
+    <button class="save-btn" id="saveNotes">儲存備註</button>
+  </div>
+</div>
+<script>
+const contactId = window.location.pathname.split('/').pop();
+let currentDrafts = [];
+
+async function loadConversation() {
+  let contact, messages;
+  try {
+    const [convRes, draftRes] = await Promise.all([
+      fetch(`/api/conversations/${contactId}`),
+      fetch('/api/drafts'),
+    ]);
+    const convData = await convRes.json();
+    contact = convData.contact;
+    messages = convData.messages;
+    const allDrafts = await draftRes.json();
+    currentDrafts = allDrafts.filter(d => d.contact_id === parseInt(contactId));
+  } catch (e) {
+    console.error('載入失敗:', e);
+    return;
+  }
+
+  document.getElementById('contactName').textContent = contact.display_name || '未知用戶';
+  const stageNames = { catch: '接住階段', warm: '養溫階段', convert: '轉化階段' };
+  document.getElementById('contactStage').textContent = stageNames[contact.stage] || contact.stage;
+  document.getElementById('stageSelect').value = contact.stage;
+  document.getElementById('notes').value = contact.notes || '';
+
+  const msgEl = document.getElementById('messages');
+  msgEl.innerHTML = messages.map(m => `
+    <div class="msg msg-${m.direction}">
+      <div class="msg-bubble">${escapeHtml(m.content)}</div>
+      <div class="msg-meta">${formatTime(m.created_at)}</div>
+      ${m.source === 'ai' ? '<div class="msg-source">AI 回覆</div>' : ''}
+      ${m.sent_by ? `<div class="msg-source">${escapeHtml(m.sent_by)}</div>` : ''}
+    </div>
+  `).join('');
+  msgEl.scrollTop = msgEl.scrollHeight;
+
+  const draftArea = document.getElementById('draftArea');
+  if (currentDrafts.length > 0) {
+    const d = currentDrafts[0];
+    draftArea.innerHTML = `
+      <div class="draft-banner">
+        <h3>AI 草稿待審核</h3>
+        <textarea class="draft-content" id="draftContent">${escapeHtml(d.ai_content)}</textarea>
+        <div class="draft-actions">
+          <button class="btn-approve" onclick="approveDraft(${d.id})">確認送出</button>
+          <button class="btn-approve" onclick="editDraft(${d.id})">修改後送出</button>
+          <button class="btn-reject" onclick="rejectDraft(${d.id})">拒絕</button>
+        </div>
+      </div>
+    `;
+  } else {
+    draftArea.innerHTML = '';
+  }
+}
+
+async function approveDraft(draftId) {
+  try {
+    const res = await fetch(`/api/drafts/${draftId}/approve`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) { alert('送出失敗：' + (data.error || '未知錯誤')); return; }
+    alert('已送出回覆給觀眾');
+  } catch (e) { alert('操作失敗：' + e.message); }
+  loadConversation();
+}
+
+async function editDraft(draftId) {
+  const content = document.getElementById('draftContent').value;
+  if (!content.trim()) { alert('請輸入修改後的內容'); return; }
+  try {
+    const res = await fetch(`/api/drafts/${draftId}/edit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    const data = await res.json();
+    if (!res.ok) { alert('送出失敗：' + (data.error || '未知錯誤')); return; }
+    alert('已送出修改後的回覆');
+  } catch (e) { alert('操作失敗：' + e.message); }
+  loadConversation();
+}
+
+async function rejectDraft(draftId) {
+  if (!confirm('確定要拒絕這則草稿嗎？')) return;
+  try {
+    const res = await fetch(`/api/drafts/${draftId}/reject`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) { alert('操作失敗：' + (data.error || '未知錯誤')); return; }
+  } catch (e) { alert('操作失敗：' + e.message); }
+  loadConversation();
+}
+
+document.getElementById('replyBtn').addEventListener('click', sendReply);
+document.getElementById('replyInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendReply();
+});
+
+async function sendReply() {
+  const input = document.getElementById('replyInput');
+  const content = input.value.trim();
+  if (!content) return;
+  try {
+    const res = await fetch(`/api/conversations/${contactId}/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    const data = await res.json();
+    if (!res.ok) { alert('送出失敗：' + (data.error || '未知錯誤')); return; }
+    input.value = '';
+  } catch (e) { alert('送出失敗：' + e.message); return; }
+  loadConversation();
+}
+
+document.getElementById('stageSelect').addEventListener('change', async (e) => {
+  await fetch(`/api/contacts/${contactId}/stage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stage: e.target.value }),
+  });
+});
+
+document.getElementById('saveNotes').addEventListener('click', async () => {
+  await fetch(`/api/contacts/${contactId}/notes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ notes: document.getElementById('notes').value }),
+  });
+  document.getElementById('saveNotes').textContent = '已儲存 ✓';
+  setTimeout(() => document.getElementById('saveNotes').textContent = '儲存備註', 2000);
+});
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function formatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'Z');
+  return d.toLocaleString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+loadConversation();
+setInterval(loadConversation, 10000);
+</script>
+</body>
+</html>
