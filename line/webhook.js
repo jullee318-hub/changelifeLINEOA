@@ -84,6 +84,7 @@ async function processEvent(event) {
     const c = (m.content || '').trim();
     if (!c) return false;
     if (c.includes('品慧老師會盡快回覆你')) return false;
+    if (c.includes('我先記下來') && c.includes('晚一點回覆你')) return false;
     return true;
   });
   const messages = filtered.slice(-6);
@@ -95,7 +96,7 @@ async function processEvent(event) {
     console.log('[Process] AI 回覆產生成功，長度:', aiReply.length);
   } catch (aiErr) {
     console.error('[Process] AI 產生回覆失敗:', aiErr.message, aiErr.stack);
-    aiReply = '收到你的訊息了 😊\n品慧老師會盡快回覆你，請稍等一下 ✨';
+    aiReply = '收到了，我先記下來 😊\n晚一點回覆你，你先不用急 ✨';
   }
 
   const mode = db.getSetting('reply_mode') || 'semi-auto';

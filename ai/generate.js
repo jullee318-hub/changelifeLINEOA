@@ -85,16 +85,12 @@ function buildConversationMessages(messages) {
   return result;
 }
 
-async function generateReply(messages, stage, contact, currentMessage) {
-  const currentText = (currentMessage || '你好').trim();
-
-  console.log('[AI] 當前訊息:', currentText, '| 模型:', config.anthropic.model);
-
+async function callClaudeAPI(systemPrompt, userText) {
   const response = await client.messages.create({
     model: config.anthropic.model,
     max_tokens: 500,
-    system: buildSystemPrompt(stage),
-    messages: [{ role: 'user', content: currentText }],
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userText }],
   });
 
   if (!response.content || !response.content[0] || !response.content[0].text) {
@@ -103,6 +99,30 @@ async function generateReply(messages, stage, contact, currentMessage) {
   }
 
   return response.content[0].text.trim();
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function generateReply(messages, stage, contact, currentMessage) {
+  const currentText = (currentMessage || '你好').trim();
+  const systemPrompt = buildSystemPrompt(stage);
+
+  console.log('[AI] 當前訊息:', currentText, '| 模型:', config.anthropic.model);
+
+  try {
+    return await callClaudeAPI(systemPrompt, currentText);
+  } catch (firstErr) {
+    console.error('[AI] 第一次呼叫失敗:', firstErr.message, '| 2秒後重試...');
+    await sleep(2000);
+    try {
+      return await callClaudeAPI(systemPrompt, currentText);
+    } catch (secondErr) {
+      console.error('[AI] 重試也失敗:', secondErr.message);
+      throw secondErr;
+    }
+  }
 }
 
 module.exports = { generateReply };
