@@ -13,6 +13,10 @@ const yuanchengongModule = fs.readFileSync(path.join(__dirname, 'prompts', 'modu
 const installmentModule = fs.readFileSync(path.join(__dirname, 'prompts', 'modules', 'installment.md'), 'utf-8');
 const tiandishenModule = fs.readFileSync(path.join(__dirname, 'prompts', 'modules', 'tiandishen.md'), 'utf-8');
 const objectionModule = fs.readFileSync(path.join(__dirname, 'prompts', 'modules', 'objection.md'), 'utf-8');
+const lifeIssuesModule = fs.readFileSync(path.join(__dirname, 'prompts', 'modules', 'life-issues.md'), 'utf-8');
+const faqTeacherModule = fs.readFileSync(path.join(__dirname, 'prompts', 'modules', 'faq-teacher.md'), 'utf-8');
+const welcomeModule = fs.readFileSync(path.join(__dirname, 'prompts', 'modules', 'welcome.md'), 'utf-8');
+const followUpModule = fs.readFileSync(path.join(__dirname, 'prompts', 'modules', 'follow-up.md'), 'utf-8');
 
 const MODULE_RULES = [
   {
@@ -23,7 +27,7 @@ const MODULE_RULES = [
   {
     name: '元辰宮',
     content: yuanchengongModule,
-    keywords: ['元辰宮', '元辰', '療癒師', '療癒個案'],
+    keywords: ['元辰宮', '元辰', '療癒師', '療癒個案', '算命', '可怕', '害怕', '迷信', '科學', '心理諮商', '處理一次', '幾次', '效果', '多久'],
   },
   {
     name: '分期付款',
@@ -39,6 +43,26 @@ const MODULE_RULES = [
     name: '異議處理',
     content: objectionModule,
     keywords: ['退費', '退款', '騙', '有效', '無效', '不信', '不相信', '貴', '沒有用', '沒用', '可以退', '不想上', '不喜歡', '解決'],
+  },
+  {
+    name: '生活議題',
+    content: lifeIssuesModule,
+    keywords: ['感情', '男朋友', '女朋友', '老公', '老婆', '分手', '外遇', '出軌', '迴心轉意', '復合', '賺不到錢', '工作不順', '找工作', '沒錢', '加薪', '升職', '運勢', '不順', '衰', '倒楣', '身體不好', '生病', '健康', '看醫生'],
+  },
+  {
+    name: '品慧老師',
+    content: faqTeacherModule,
+    keywords: ['品慧老師', '老師是誰', '老師的', '教學風格', '資歷', '嚴格', '跟不上', '跟其他', '上完課還會'],
+  },
+  {
+    name: '歡迎',
+    content: welcomeModule,
+    keywords: ['你好', '哈囉', '嗨', 'hi', 'hello', '想了解', '朋友介紹', '朋友推薦', '怎麼報名'],
+  },
+  {
+    name: '跟進養溫',
+    content: followUpModule,
+    keywords: ['考慮', '再想想', '不確定', '適不適合', '猶豫', '還在想', '還沒決定'],
   },
 ];
 
