@@ -47,7 +47,7 @@ const MODULE_RULES = [
   {
     name: '生活議題',
     content: lifeIssuesModule,
-    keywords: ['感情', '男朋友', '女朋友', '老公', '老婆', '分手', '外遇', '出軌', '迴心轉意', '復合', '賺不到錢', '工作不順', '找工作', '沒錢', '有錢', '加薪', '升職', '運勢', '不順', '衰', '倒楣', '身體不好', '生病', '健康', '看醫生'],
+    keywords: ['感情', '男朋友', '女朋友', '老公', '老婆', '分手', '外遇', '出軌', '小三', '第三者', '離婚', '吵架', '冷戰', '迴心轉意', '回心轉意', '復合', '劈腿', '賺不到錢', '工作不順', '找工作', '沒錢', '有錢', '加薪', '升職', '被裁', '失業', '運勢', '不順', '衰', '倒楣', '身體不好', '生病', '健康', '看醫生', '失眠', '焦慮', '憂鬱'],
   },
   {
     name: '品慧老師',
@@ -180,13 +180,21 @@ async function generateReply(messages, stage, contact, currentMessage) {
   try {
     return await callClaudeAPI(systemPrompt, currentText);
   } catch (firstErr) {
-    console.error('[AI] 第一次呼叫失敗:', firstErr.message, '| 2秒後用精簡版重試...');
-    await sleep(2000);
+    const isRateLimit = firstErr.status === 429;
+    const waitTime = isRateLimit ? 5000 : 3000;
+    console.error('[AI] 第一次呼叫失敗:', firstErr.status, firstErr.message, `| ${waitTime/1000}秒後用精簡版重試...`);
+    await sleep(waitTime);
     try {
       return await callClaudeAPI(LITE_PROMPT, currentText);
     } catch (secondErr) {
-      console.error('[AI] 精簡版也失敗:', secondErr.message);
-      throw secondErr;
+      console.error('[AI] 精簡版也失敗:', secondErr.status, secondErr.message, '| 5秒後最後一次重試...');
+      await sleep(5000);
+      try {
+        return await callClaudeAPI(LITE_PROMPT, currentText);
+      } catch (thirdErr) {
+        console.error('[AI] 第三次也失敗:', thirdErr.status, thirdErr.message);
+        throw thirdErr;
+      }
     }
   }
 }
